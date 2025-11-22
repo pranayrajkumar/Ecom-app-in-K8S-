@@ -101,7 +101,7 @@ Execute the below commands as separate set
 (a)
 eksctl create cluster --name=DevOpsTeam-eks \
                       --region=ap-south-2 \
-                      --zones=ap-south-1a,ap-south-1b \
+                      --zones=ap-south-2a,ap-south-2b \
                       --version=1.30 \
                       --without-nodegroup
 
@@ -110,7 +110,7 @@ Goto EKS Console and verify the cluster.
 
 (b)
 eksctl utils associate-iam-oidc-provider \
-    --region ap-south-1 \
+    --region ap-south-2 \
     --cluster DevOpsTeam-eks \
     --approve
 
@@ -123,8 +123,8 @@ Without it, these services will not be able to access AWS resources securely.
 (c)
 Before executing the below command, in the 'ssh-public-key' keep the  '<PEM FILE NAME>' (dont give .pem. Just give the pem file name) which was used to create Jenkins Server
 
-eksctl create nodegroup --cluster=DevOpsTeam-EKS \
-                       --region=us-south-1 \
+eksctl create nodegroup --cluster=DevOpsTeam-eks \
+                       --region=ap-south-2 \
                        --name=node2 \
                        --node-type=t3.medium \
                        --nodes=3 \
@@ -132,7 +132,7 @@ eksctl create nodegroup --cluster=DevOpsTeam-EKS \
                        --nodes-max=4 \
                        --node-volume-size=20 \
                        --ssh-access \
-                       --ssh-public-key=ecommerce \
+                       --ssh-public-key=AwsMasterKey \
                        --managed \
                        --asg-access \
                        --external-dns-access \
@@ -650,7 +650,7 @@ metadata:
   annotations:
     kubernetes.io/service-account.name: jenkins #Here my service account name is 'jenkins' based on the above created yml files
 
---- esc --- :wq --- kubectl create apply -f secret.yml -n <NameSpaceName i.e webapps> (MODIFIED COMMAND FOR DEVOPS EXAM APP: kubectl apply -f secret.yml -n webapps) --- Now the secret will get created inside the namespace --- To get the token --- kubectl describe secret <SecretName i.e mysecretname> -n <NameSpaceName i.e webapps> (MODIFIED COMMAND FOR DEVOPS EXAM APP: kubectl describe secret mysecretname -n webapps) --- You can see the token. Copy and paste in notepad
+--- esc --- :wq --- kubectl apply -f secret.yml -n <NameSpaceName i.e webapps> (MODIFIED COMMAND FOR DEVOPS EXAM APP: kubectl apply -f secret.yml -n webapps) --- Now the secret will get created inside the namespace --- To get the token --- kubectl describe secret <SecretName i.e mysecretname> -n <NameSpaceName i.e webapps> (MODIFIED COMMAND FOR DEVOPS EXAM APP: kubectl describe secret mysecretname -n webapps) --- You can see the token. Copy and paste in notepad
 We will configure this in Jenkins in sometime
 
 eyJhbGciOiJSUzI1NiIsImtpZCI6IkNxMkxsR3VNTVlsSGhNRHd2T1F1X1N1eUxOVnJfODdmZHVHZ0E2WHRmdjAifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ3ZWJhcHBzIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6Im15c2VjcmV0bmFtZSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJqZW5raW5zIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiYjAxNmFmZjctOGE1OC00ZDEyLTlhYjEtY2EwYjcxMzQzYzc1Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OndlYmFwcHM6amVua2lucyJ9.worPaZdFJfeswDgIghIngEjeiZ2x2V9yFQc9qLG3yyJRh5ZOnt3WiHeQkP_wfbLd5vt5r-WIsEA3BjFDI8KMaxgOa9lmrGa9jYQjaEyCw-oErDUz1Xh87Iby_OG1bkmij-sTU4GKXLyoavw5dEr5FLY0iAv2aoAzaUchb-MVoTmxWrTQa3RcVGeraOWIWkv-jP1bq-4eFGAeBm_1HG5KakWJ5Y7gnpNGn6RWAowh_9p0R-VMsirmSmeZ19_-FAdBg0zgjaHtcm317P5wUVMNNT3zxoWL9NN7_VAPFAIgW2SLKID45ww6bfEWiaFNaZETizKfZjhRW5rhS8sIevJe9g
@@ -673,13 +673,13 @@ pipeline {
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        DOCKER_IMAGE = "kastrov/ecommerce:latest"
+        DOCKER_IMAGE = "bpranayraj/ecommerce:latest"
     }
 
     stages {
         stage('Git Checkout') {
             steps {
-                git 'https://github.com/KastroVKiran/Ecommerce-App-Kastro.git'
+                git 'https://github.com/pranayrajkumar/Ecom-app-in-K8S-.git'
             }
         }
 
@@ -745,17 +745,7 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker-cred') {
-                        sh "docker push ${DOCKER_IMAGE}"
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to Container') {
+         stage('Deploy to Container') {
             steps {
                 script {
                     sh "docker stop ecommerce-container || true && docker rm ecommerce-container || true"
@@ -763,25 +753,24 @@ pipeline {
                 }
             }
         }
-
-        // ✅ These two stages were outside of "stages" block before. Moved inside.
-        stage('Deploy To Kubernetes') {
+        
+         stage('Deploy To Kubernetes') {
             steps {
-                withKubeConfig(caCertificate: '', clusterName: 'kastro-eks', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://A3A38B4561B8159534054B870C447E05.yl4.us-east-1.eks.amazonaws.com') {
+                withKubeConfig(caCertificate: '', clusterName: 'DevOpsTeam-eks', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://A7D029635694C9AC878D9ABF06CAE6F8.yl4.ap-south-2.eks.amazonaws.com')  {
                     sh "kubectl apply -f deployment-service.yaml -n webapps"
                 }
             }
-        }
-
-        stage('Verify the Deployment') {
+        }  
+        
+         stage('Verify the Deployment') {
             steps {
-                withKubeConfig(caCertificate: '', clusterName: 'kastro-eks', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://A3A38B4561B8159534054B870C447E05.yl4.us-east-1.eks.amazonaws.com') {
+                withKubeConfig(caCertificate: '', clusterName: 'DevOpsTeam-eks', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://A7D029635694C9AC878D9ABF06CAE6F8.yl4.ap-south-2.eks.amazonaws.com') {
                     sh "kubectl get pods -n webapps"
                     sh "kubectl get svc -n webapps"
                 }
             }
         }
-    } // ✅ Correct closing of "stages" block
+    }
 
     post {
         always {
@@ -820,6 +809,8 @@ pipeline {
 }
 
 
+
 To access the App, we need to get the Load Balancer URL
 kuetl get all -n webapps
+
 
