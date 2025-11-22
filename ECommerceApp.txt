@@ -99,9 +99,9 @@ eksctl version
 =============================
 Execute the below commands as separate set
 (a)
-eksctl create cluster --name=kastro-eks \
-                      --region=us-east-1 \
-                      --zones=us-east-1a,us-east-1b \
+eksctl create cluster --name=DevOpsTeam-eks \
+                      --region=ap-south-2 \
+                      --zones=ap-south-1a,ap-south-1b \
                       --version=1.30 \
                       --without-nodegroup
 
@@ -110,8 +110,8 @@ Goto EKS Console and verify the cluster.
 
 (b)
 eksctl utils associate-iam-oidc-provider \
-    --region us-east-1 \
-    --cluster kastro-eks \
+    --region ap-south-1 \
+    --cluster DevOpsTeam-eks \
     --approve
 
 The above command is crucial when setting up an EKS cluster because it enables IAM roles for service accounts (IRSA)
@@ -123,8 +123,8 @@ Without it, these services will not be able to access AWS resources securely.
 (c)
 Before executing the below command, in the 'ssh-public-key' keep the  '<PEM FILE NAME>' (dont give .pem. Just give the pem file name) which was used to create Jenkins Server
 
-eksctl create nodegroup --cluster=kastro-eks \
-                       --region=us-east-1 \
+eksctl create nodegroup --cluster=DevOpsTeam-EKS \
+                       --region=us-south-1 \
                        --name=node2 \
                        --node-type=t3.medium \
                        --nodes=3 \
@@ -822,3 +822,4 @@ pipeline {
 
 To access the App, we need to get the Load Balancer URL
 kuetl get all -n webapps
+
